@@ -1,0 +1,14 @@
+Create a release checklist for RalphBoost and a short integration guide.
+Requirements:
+- Output must follow the JSON schema in the system instructions.
+- Exactly 3 hypotheses with numeric targets.
+- Exactly 3 metrics with formula_or_calc referencing telemetry fields.
+- Include a metric named "False Completion Rate" with formula_or_calc using hidden_fail_iters and iterations.
+- micro_tasks list with at least 12 tasks, include A/B ablation, sanity-check, regression guard, latency profiling, token budget analysis.
+- anti_gaming must include at least 3 hidden checks and explain withholding.
+- actions must include:
+  - write_file to docs/RELEASE_CHECKLIST.md
+  - write_file to docs/INTEGRATION_GUIDE.md
+  - note describing log fields for latency_ms, total_tokens, token_budget, hidden_fail_iters
+  - actions must use objects with keys {type, path, content} for write_file and {type, text} for note
+Return ONLY valid JSON.

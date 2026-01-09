@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ralphboost"
+version = "0.1.0"
+description = "Lo-fi boosting-style autonomy loop with verifier, hidden checks, and telemetry."
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [{name = "RalphBoost Contributors"}]
+dependencies = [
+  "google-genai>=0.3.0"
+]
+
+[project.scripts]
+ralphboost = "ralphboost.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["ralphboost*"]

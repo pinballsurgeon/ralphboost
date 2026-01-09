@@ -1,0 +1,19 @@
+Create a hardened evaluation protocol for RalphBoost under strict verification.
+Requirements:
+- Output must follow the JSON schema in the system instructions.
+- Exactly 3 hypotheses with numeric targets and explicit thresholds.
+- Exactly 3 metrics, each formula_or_calc must reference telemetry fields.
+- Include a metric named "False Completion Rate" with formula_or_calc using hidden_fail_iters and iterations.
+- micro_tasks list must have at least 14 tasks and include:
+  - A/B ablation
+  - sanity-check
+  - regression guard
+  - latency profiling
+  - token budget analysis
+  - hidden check reveal policy
+  - verifier drift audit
+- anti_gaming must include at least 3 hidden checks and explain withholding.
+- actions must include:
+  - write_file to a .md protocol
+  - note describing log fields for latency_ms, total_tokens, token_budget, hidden_fail_iters
+Return ONLY valid JSON.

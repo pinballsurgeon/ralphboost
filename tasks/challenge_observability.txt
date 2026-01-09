@@ -1,0 +1,9 @@
+Design a telemetry and observability protocol for RalphBoost runs.
+Requirements:
+- Output must follow the JSON schema in the system instructions.
+- Exactly 3 hypotheses with numeric targets.
+- Exactly 3 metrics with formula_or_calc referencing telemetry fields (latency_ms, total_tokens, hidden_fail_iters).
+- micro_tasks list with at least 12 tasks, include A/B ablation, sanity-check, regression guard, latency profiling, token budget analysis.
+- anti_gaming must include at least 3 hidden checks and explain withholding.
+- actions must include a write_file to a .md protocol and a note listing log fields for tokens and latency.
+Return ONLY valid JSON.
