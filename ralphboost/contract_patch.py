@@ -16,5 +16,6 @@ Rules:
 - Do not rewrite full objects if a single field change is enough.
 - Always respect allowed paths given in the prompt.
 - When editing actions, use items shaped like {"type":"write_file","path":"...","content":"..."} and {"type":"note","text":"..."}.
+- Satisfy requirements in top-level fields (hypotheses, metrics, micro_tasks, anti_gaming, actions), not only in doc text.
 Return ONLY JSON.
 """

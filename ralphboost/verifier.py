@@ -186,9 +186,23 @@ def make_strict_verifier(
         ok_act2 = ok_act and any(
             isinstance(a, dict)
             and a.get("type") == "note"
-            and "log" in str(a.get("text", "")).lower()
-            and "latency" in str(a.get("text", "")).lower()
-            and "token" in str(a.get("text", "")).lower()
+            and (
+                (
+                    "latency_ms" in str(a.get("text", "")).lower()
+                    and "total_tokens" in str(a.get("text", "")).lower()
+                    and "token_budget" in str(a.get("text", "")).lower()
+                )
+                or (
+                    "log" in str(a.get("text", "")).lower()
+                    and "latency" in str(a.get("text", "")).lower()
+                    and "token" in str(a.get("text", "")).lower()
+                )
+                or (
+                    "telemetry" in str(a.get("text", "")).lower()
+                    and "latency" in str(a.get("text", "")).lower()
+                    and "token" in str(a.get("text", "")).lower()
+                )
+            )
             for a in acts
         )
         if ok_act2:
