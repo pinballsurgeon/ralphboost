@@ -18,3 +18,20 @@ Quick start (Gemini 3 Flash)
 Install from GitHub
 - `pip install git+https://github.com/pinballsurgeon/ralphboost.git`
 - `python -m ralphboost suite tasks/workflow_*.txt --verify strict --mode patch --execute-actions --run-prefix demo`
+
+Python API (no CLI, no task files)
+```python
+import os
+from ralphboost.api import run_task_text, run_task_fast, build_task
+
+os.environ["GEMINI_API_KEY"] = "YOUR_KEY"
+os.environ["RALPHBOOST_MODEL"] = "gemini-3-flash-preview"
+
+task = build_task(
+    "an Incident Response Playbook + SLO spec + alert config for a Checkout API",
+    ["docs/INCIDENT_PLAYBOOK.md", "docs/SLO.md", "configs/alerts.yaml"],
+)
+
+result = run_task_fast(task, execute=True)
+print(result["status"], result["best_score"])
+```
