@@ -32,7 +32,7 @@ def solve(
         settings = load_settings()
     except RuntimeError:
         # Fallback if env vars missing but might be passed as args
-        settings = Settings(api_key="", model="gemini-3.0-flash")
+        settings = Settings(api_key="", model="gemini-3-flash-preview")
     
     if api_key:
         settings.api_key = api_key
