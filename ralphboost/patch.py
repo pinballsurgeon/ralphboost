@@ -1,85 +1,59 @@
-from typing import Any, Dict, List, Tuple
 
+from typing import Any, Dict, List, Tuple, Optional
 
-def seed_state() -> Dict[str, Any]:
-    return {
-        "iteration_summary": "",
-        "hypotheses": ["", "", ""],
-        "metrics": [
-            {"name": "", "definition": "", "formula_or_calc": ""},
-            {"name": "", "definition": "", "formula_or_calc": ""},
-            {"name": "", "definition": "", "formula_or_calc": ""},
-        ],
-        "micro_tasks": [],
-        "anti_gaming": {"mechanism": "", "hidden_checks": []},
-        "actions": [],
-        "completion_signal": {"done": False, "reason": ""},
-    }
-
-
-def _split_path(path: str) -> List[str]:
-    return [p for p in path.strip().split(".") if p]
-
-
-def _is_index(seg: str) -> bool:
-    return seg.isdigit()
-
-
-def _ensure_list_size(lst: List[Any], idx: int) -> None:
-    while len(lst) <= idx:
-        lst.append(None)
-
-
-def set_path(root: Any, path: str, value: Any) -> bool:
-    parts = _split_path(path)
-    if not parts:
-        return False
-    cur = root
-    for i, seg in enumerate(parts):
-        is_last = i == len(parts) - 1
-        if _is_index(seg):
-            if not isinstance(cur, list):
-                return False
-            idx = int(seg)
-            _ensure_list_size(cur, idx)
-            if is_last:
-                cur[idx] = value
-                return True
-            if cur[idx] is None:
-                cur[idx] = {}
-            cur = cur[idx]
-        else:
-            if not isinstance(cur, dict):
-                return False
-            if is_last:
-                cur[seg] = value
-                return True
-            if seg not in cur or cur[seg] is None:
-                cur[seg] = {}
-            cur = cur[seg]
-    return False
-
-
-def apply_patch(
-    state: Dict[str, Any],
-    patch_ops: List[Dict[str, Any]],
-    allowed_roots: List[str],
-) -> Tuple[Dict[str, Any], int, int]:
+def apply_code_patch(
+    state: Dict[str, str],
+    patch_ops: List[Dict[str, str]],
+    allowed_paths: Optional[List[str]] = None
+) -> Tuple[Dict[str, str], int, int]:
+    """
+    Applies patches to code state.
+    state: Dict mapping file paths to file content.
+    patch_ops: List of dicts with "path" and "value".
+    allowed_paths: Optional list of allowed file paths (or prefixes?). 
+                   For now, we enforce exact match or just directory check?
+                   "Allowed paths only: src/ + tests/" implies directories.
+                   But "Freeze passing files" implies specific files.
+                   Let's support exact paths for now.
+    """
     applied = 0
     skipped = 0
+    
+    new_state = state.copy()
+    
     for op in patch_ops:
-        path = str(op.get("path", "")).strip()
+        path = op.get("path")
         value = op.get("value")
-        if not path:
+        
+        if not path or value is None:
             skipped += 1
             continue
-        root = path.split(".")[0]
-        if allowed_roots and root not in allowed_roots:
-            skipped += 1
-            continue
-        ok = set_path(state, path, value)
-        if ok:
-            applied += 1
-        else:
-            skipped += 1
-    return state, applied, skipped
+            
+        # Check allowed paths
+        if allowed_paths is not None:
+            # Simple check: path must be in allowed_paths list
+            # Or if allowed_paths contains directories, verify prefix?
+            # User said "Allowed paths only: src/ + tests/".
+            # If allowed_paths is ["src/", "tests/"], we check startsWith.
+            # If it is ["main.py"], we check exact.
+            # Let's support both: if allowed path ends with /, treat as dir.
+            
+            is_allowed = False
+            for allowed in allowed_paths:
+                if allowed.endswith("/"):
+                    if path.startswith(allowed):
+                        is_allowed = True
+                        break
+                else:
+                    if path == allowed:
+                        is_allowed = True
+                        break
+            
+            if not is_allowed:
+                skipped += 1
+                continue
+        
+        new_state[path] = value
+        applied += 1
+        
+    return new_state, applied, skipped

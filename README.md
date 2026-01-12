@@ -1,37 +1,30 @@
-# RalphBoost
+# RalphBoost (Code-First Reset)
 
-RalphBoost is a lo-fi loop engine, gradient boost inspired
+RalphBoost is being rebuilt as a code-only, executable-verification loop.
+The goal is a boosting-style TDD engine: each iteration fixes the remaining
+test failures with minimal patches, and completion only happens when tests pass.
 
-Quick start (Gemini 3 Flash)
-- Install deps: `pip install -r requirements.txt`
-- Set your key: `setx GEMINI_API_KEY "your_key_here"` (PowerShell: `$env:GEMINI_API_KEY="..."`)
-- Optional model override: `setx RALPHBOOST_MODEL "gemini-3.0-flash"`
-- Run a task: `python -m ralphboost run path\to\task.txt`
-- Strict mode + hidden checks: `python -m ralphboost run tasks\challenge_protocol.txt --verify strict --reveal-after 2`
-- Report metrics: `python -m ralphboost report runs\phase1.jsonl`
-- Challenge suite: `python -m ralphboost suite tasks\*.txt --verify strict --reveal-after 2 --run-prefix suite1`
-- Patch mode (boosting-style): `python -m ralphboost run tasks\challenge_protocol.txt --verify strict --mode patch --reveal-after 2 --run-id patch1`
-- Patch suite: `python -m ralphboost suite tasks\*.txt --verify strict --mode patch --reveal-after 2 --run-prefix suite_patch`
-- Hidden rotation: `python -m ralphboost suite tasks\*.txt --verify strict --hidden-rotate --run-prefix suite_rot`
-- Workflow demo (writes docs): `python -m ralphboost suite tasks\workflow_*.txt --verify strict --mode patch --execute-actions --run-prefix demo1`
+Project Map
+- [HANDOFF_SUMMARY.md](HANDOFF_SUMMARY.md)
+- [ONBOARDING_CHAT.md](ONBOARDING_CHAT.md)
 
-Install from GitHub
-- `pip install git+https://github.com/pinballsurgeon/ralphboost.git`
-- `python -m ralphboost suite tasks/workflow_*.txt --verify strict --mode patch --execute-actions --run-prefix demo`
+Start here
+- `docs/CODE_FIRST_HANDOFF.md`
+- `docs/CODE_FIRST_ARCHITECTURE.md`
+- `docs/CODE_FIRST_TDD.md`
+- `docs/CHALLENGE_SUITE.md`
+- `docs/TEAM_STARTER.md`
 
-Python API (no CLI, no task files)
-```python
-import os
-from ralphboost.api import run_task_text, run_task_fast, build_task
+Benchmarks
+- `benchmarks/README.md`
+- Tiered task specs under `benchmarks/tier1`, `benchmarks/tier2`, `benchmarks/tier3`
 
-os.environ["GEMINI_API_KEY"] = "YOUR_KEY"
-os.environ["RALPHBOOST_MODEL"] = "gemini-3-flash-preview"
+Legacy (v1 doc-loop artifacts)
+- Old docs and outputs are in `docs/legacy/`
+- Old tasks are in `legacy/tasks_v1/`
 
-task = build_task(
-    "an Incident Response Playbook + SLO spec + alert config for a Checkout API",
-    ["docs/INCIDENT_PLAYBOOK.md", "docs/SLO.md", "configs/alerts.yaml"],
-)
+Repo goals (near term)
+- Code-only contract and patch engine
+- Executable verifier (tests = truth)
+- Telemetry of loss, thrash, patch size, and convergence
 
-result = run_task_fast(task, execute=True)
-print(result["status"], result["best_score"])
-```

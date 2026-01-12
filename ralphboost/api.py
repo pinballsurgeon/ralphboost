@@ -1,119 +1,55 @@
-import hashlib
-from dataclasses import asdict
-from typing import Any, Dict, Optional
 
-from .actions import execute_actions
-from .config import load_settings
-from .contract import SYSTEM_INSTRUCTIONS
-from .contract_patch import PATCH_INSTRUCTIONS
+from typing import Dict, Any, Optional, List
+from .config import load_settings, Settings
+from .contract import CODE_ONLY_INSTRUCTIONS
 from .loop import run_loop
-from .report import compute_report
-from .verifier import make_strict_verifier, verify_minimal_schema
+from .verifier import verify_code_state
+from .types import LoopResult
 
-
-def run_task_text(
+def solve(
     task: str,
-    mode: str = "patch",
-    verify: str = "strict",
-    hidden_id: str = "",
-    hidden_rotate: bool = False,
-    reveal_after: int = 0,
-    inject_hidden: bool = False,
+    files: Dict[str, str],
     max_iter: int = 6,
-    patience: int = 2,
-    feedback: str = "full",
-    execute: bool = False,
-    allow_commands: bool = False,
-    action_root: str = ".",
-) -> Dict[str, Any]:
-    settings = load_settings()
-    if verify == "strict":
-        seed = hashlib.sha256(task.encode("utf-8")).hexdigest()[:12] if hidden_rotate else None
-        verifier = make_strict_verifier(hidden_id=hidden_id or None, rotate_seed=seed)
-    else:
-        verifier = verify_minimal_schema
-    contract = PATCH_INSTRUCTIONS if mode == "patch" else SYSTEM_INSTRUCTIONS
-    run = run_loop(
+    model: str = None,
+    api_key: str = None,
+    allowed_paths: Optional[List[str]] = None
+) -> LoopResult:
+    """
+    High-level API to run RalphBoost on a set of files.
+    
+    Args:
+        task: Description of the task/bug to fix.
+        files: Dictionary of file paths to content (initial state).
+        max_iter: Maximum iterations to try.
+        model: Gemini model name (default from env or config).
+        api_key: Gemini API key (default from env).
+        allowed_paths: List of allowed file paths to modify.
+        
+    Returns:
+        LoopResult object containing history and status.
+    """
+    try:
+        settings = load_settings()
+    except RuntimeError:
+        # Fallback if env vars missing but might be passed as args
+        settings = Settings(api_key="", model="gemini-3.0-flash")
+    
+    if api_key:
+        settings.api_key = api_key
+    if model:
+        settings.model = model
+        
+    if not settings.api_key:
+        raise ValueError("API Key not provided. Set GEMINI_API_KEY env var or pass api_key argument.")
+
+    result = run_loop(
         base_task=task,
-        system_instructions=contract,
-        verifier=verifier,
+        system_instructions=CODE_ONLY_INSTRUCTIONS,
+        verifier=verify_code_state,
         settings=settings,
         max_iter=max_iter,
-        no_progress_patience=patience,
-        feedback_mode=feedback,
-        reveal_after=reveal_after,
-        inject_hidden=inject_hidden,
-        mode=mode,
+        initial_state=files,
+        allowed_paths=allowed_paths
     )
-    actions_result = None
-    if execute and run.history:
-        final_state = run.history[-1].parsed or {}
-        actions = final_state.get("actions", [])
-        if isinstance(actions, list):
-            write_count, cmd_count, errors = execute_actions(
-                actions, action_root, allow_commands
-            )
-            actions_result = {
-                "write_files": write_count,
-                "commands": cmd_count,
-                "errors": errors,
-            }
-    rows = [asdict(r) for r in run.history]
-    report = compute_report(rows)
-    final = run.history[-1].parsed if run.history else None
-    return {
-        "status": run.status,
-        "best_score": run.best_score,
-        "iterations": run.iterations,
-        "final": final,
-        "report": report,
-        "actions": actions_result,
-    }
-
-
-def run_task_simple(task: str) -> Optional[Dict[str, Any]]:
-    result = run_task_text(task)
-    return result.get("final")
-
-
-def run_task_fast(
-    task: str,
-    execute: bool = False,
-    allow_commands: bool = False,
-    action_root: str = ".",
-    **overrides: Any,
-) -> Dict[str, Any]:
-    params = {
-        "mode": "patch",
-        "verify": "strict",
-        "hidden_rotate": True,
-        "reveal_after": 2,
-        "max_iter": 6,
-        "patience": 2,
-        "feedback": "summarize",
-        "execute": execute,
-        "allow_commands": allow_commands,
-        "action_root": action_root,
-    }
-    params.update(overrides)
-    return run_task_text(task, **params)
-
-
-def build_task(title: str, outputs: list[str], extra: str = "") -> str:
-    lines = [
-        f"Create {title}.",
-        "Requirements:",
-        "- Output must follow the JSON schema in the system instructions.",
-        "- Exactly 3 hypotheses with numeric targets.",
-        '- Exactly 3 metrics; include "False Completion Rate" with formula_or_calc using hidden_fail_iters and iterations.',
-        "- micro_tasks list with at least 12 tasks, include A/B ablation, sanity-check, regression guard, latency profiling, token budget analysis.",
-        "- anti_gaming must include at least 3 hidden checks and explain withholding.",
-        "- actions must include:",
-    ]
-    for path in outputs:
-        lines.append(f'  {{\"type\":\"write_file\",\"path\":\"{path}\",\"content\":\"...\"}}')
-    lines.append('  {"type":"note","text":"latency_ms, total_tokens, token_budget, hidden_fail_iters"}')
-    if extra.strip():
-        lines.append(extra.strip())
-    lines.append("Return ONLY valid JSON.")
-    return "\n".join(lines)
+    
+    return result

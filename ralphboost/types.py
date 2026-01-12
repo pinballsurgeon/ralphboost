@@ -8,6 +8,8 @@ class VerificationResult:
     score: float  # 0..1 visible score
     reasons: List[str]
     hidden_reasons: Optional[List[str]] = None
+    failing_tests: Optional[List[str]] = None
+    tests_run: int = 0
 
 
 @dataclass
@@ -31,6 +33,8 @@ class IterationRecord:
     visible_loss: float = 0.0
     hidden_loss: float = 0.0
     loss: float = 0.0
+    thrash_index: float = 0.0
+    failing_tests_count: int = 0
 
 
 @dataclass
