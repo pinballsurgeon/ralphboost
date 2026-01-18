@@ -11,7 +11,7 @@ except ImportError:
 from .base import Agent
 
 class GeminiAgent(Agent):
-    def __init__(self, model="gemini-2.0-flash-exp", api_key=None):
+    def __init__(self, model="gemini-flash-latest", api_key=None):
         if not GOOGLE_GENAI_AVAILABLE:
             raise ImportError("google-genai library not installed. Install with `pip install google-genai`.")
             
