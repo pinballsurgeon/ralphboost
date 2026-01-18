@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ralphboost"
+version = "0.1.0"
+description = "Agentic Gradient Boosting for Signal Decomposition"
+authors = [{name = "Pinball Surgeon", email = "pinballsurgeon@gmail.com"}]
+license = {text = "MIT"}
+dependencies = []
+requires-python = ">=3.10"
+
+[project.optional-dependencies]
+fast = ["numpy", "scipy"]
+gemini = ["google-genai"]
