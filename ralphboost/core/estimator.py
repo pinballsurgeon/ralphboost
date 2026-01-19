@@ -21,8 +21,14 @@ class RalphBooster(BaseEstimator, RegressorMixin):
         self,
         max_iterations=100,
         learning_rate=0.1,
+        k_candidates=10,
+        objective="mse",
+        min_improvement=0.0,
         min_residual_reduction=0.01,
         early_stopping_rounds=None,
+        complexity_weight=0.0,
+        duplicate_penalty=0.0,
+        duplicate_min_improvement=None,
         thinking_budget=10.0,
         agent_backend='gemini',
         n_jobs=1,
@@ -32,8 +38,14 @@ class RalphBooster(BaseEstimator, RegressorMixin):
     ):
         self.max_iterations = max_iterations
         self.learning_rate = learning_rate
+        self.k_candidates = k_candidates
+        self.objective = objective
+        self.min_improvement = min_improvement
         self.min_residual_reduction = min_residual_reduction
         self.early_stopping_rounds = early_stopping_rounds
+        self.complexity_weight = complexity_weight
+        self.duplicate_penalty = duplicate_penalty
+        self.duplicate_min_improvement = duplicate_min_improvement
         self.thinking_budget = thinking_budget
         self.agent_backend = agent_backend
         self.n_jobs = n_jobs
@@ -44,15 +56,31 @@ class RalphBooster(BaseEstimator, RegressorMixin):
         # State
         self.components_ = []
         self.history_ = []
+        self.final_residual_ = None
+        self.final_fitted_ = None
 
     def fit(self, X, y=None, eval_set=None, callbacks=None, sample_rate=None):
         """
         Fit the model to the data.
         """
+        if self.max_iterations is None or int(self.max_iterations) <= 0:
+            raise ValueError("max_iterations must be a positive integer.")
+        if self.learning_rate is None or float(self.learning_rate) <= 0.0:
+            raise ValueError("learning_rate must be > 0.")
+        if self.k_candidates is None or int(self.k_candidates) <= 0:
+            raise ValueError("k_candidates must be a positive integer.")
+        if self.min_residual_reduction is not None:
+            mrr = float(self.min_residual_reduction)
+            if mrr < 0.0 or mrr > 1.0:
+                raise ValueError("min_residual_reduction must be in [0, 1] or None.")
+        if self.min_improvement is None or float(self.min_improvement) < 0.0:
+            raise ValueError("min_improvement must be >= 0.")
+        if self.early_stopping_rounds is not None and int(self.early_stopping_rounds) < 0:
+            raise ValueError("early_stopping_rounds must be >= 0 or None.")
+
         # 1. Setup Domain
         # If domain was passed in __init__, use it. 
         # If not, try to infer or default to SignalDomain (if sample_rate provided)
-        # For now, we assume user passed domain in __init__ or we default to SignalDomain
         if not hasattr(self, 'domain') or self.domain is None:
              from ..domains.signal import SignalDomain
              self.domain = SignalDomain(sample_rate=sample_rate if sample_rate else 100.0)
@@ -89,7 +117,33 @@ class RalphBooster(BaseEstimator, RegressorMixin):
 
         # 4. Run Engine
         from .engine import RalphEngine
-        engine = RalphEngine(self.domain, agent, refiner)
+        from .objectives import LogisticObjective, MSEObjective
+
+        if isinstance(self.objective, str):
+            objective_name = self.objective.strip().lower()
+            if objective_name in {"mse", "l2"}:
+                objective = MSEObjective()
+            elif objective_name in {"logistic", "logloss", "cross_entropy"}:
+                objective = LogisticObjective()
+            else:
+                raise ValueError(f"Unknown objective: {self.objective}")
+        else:
+            objective = self.objective
+
+        engine = RalphEngine(
+            self.domain,
+            agent,
+            refiner,
+            objective=objective,
+            learning_rate=self.learning_rate,
+            k_candidates=self.k_candidates,
+            min_improvement=self.min_improvement,
+            early_stopping_rounds=self.early_stopping_rounds,
+            complexity_weight=self.complexity_weight,
+            duplicate_penalty=self.duplicate_penalty,
+            duplicate_min_improvement=self.duplicate_min_improvement,
+            verbose=self.verbose,
+        )
         
         # Target handling: if y is None, assume X is the target signal
         target = y if y is not None else X
@@ -99,6 +153,8 @@ class RalphBooster(BaseEstimator, RegressorMixin):
         self.components_ = result.components
         self.history_ = result.history
         self.metrics_ = result.metrics
+        self.final_residual_ = result.final_residual
+        self.final_fitted_ = result.final_fitted
         
         return self
 
@@ -110,13 +166,35 @@ class RalphBooster(BaseEstimator, RegressorMixin):
     def metrics(self):
         return self.metrics_
 
+    @property
+    def final_residual(self):
+        return self.final_residual_
+
+    @property
+    def final_fitted(self):
+        return self.final_fitted_
+
+    @property
+    def history(self):
+        return self.history_
+
     def predict(self, X):
         """
         Predict using the model.
         """
-        # Reconstruct signal from components
-        # X is usually time steps? 
-        # For SignalDomain, predict might take time points.
-        # This requires Domain to support `predict(components, X)`.
-        # We haven't defined that in Domain.
-        return None
+        if self.domain is None:
+            raise ValueError("No domain set; call fit() first or pass domain=... in __init__.")
+
+        if X is None:
+            raise ValueError("X cannot be None.")
+
+        fitted = self.domain.initialize_fitted(X)
+        for component in self.components_:
+            fitted = self.domain.apply(component, fitted)
+
+        if isinstance(self.objective, str) and self.objective.strip().lower() in {"logistic", "logloss", "cross_entropy"}:
+            from .objectives import LogisticObjective
+
+            fitted = LogisticObjective().link(fitted)
+
+        return fitted

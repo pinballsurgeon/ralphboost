@@ -2,7 +2,7 @@ class Refiner:
     """
     Abstract base class for component refiners.
     """
-    def refine_batch(self, candidates, state):
+    def refine_batch(self, candidates, state, domain=None):
         """
         Refine a batch of candidate components to better fit the residual.
         """

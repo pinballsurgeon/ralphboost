@@ -3,6 +3,8 @@
 Gradient boosting for iterative signal decomposition and basis discovery.
 Uses an agentic loop (The Wiggum Loop) to discover components and numerical refinement to optimize them.
 
+Architecture + RFC v1 implementation handoff: `RALPHBOOST_HANDOFF.md`.
+
 ## Installation
 
 Core (Zero-Dependency):

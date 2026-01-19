@@ -22,7 +22,17 @@ def test_sklearn_compatibility():
     assert hasattr(model, "set_params")
 
 def test_input_validation():
-    model = RalphBooster(max_iterations=-1)
-    # We expect some validation, maybe not implemented yet, but let's check basic instantiation
-    # Real validation logic comes in params.py
-    pass
+    with pytest.raises(ValueError):
+        RalphBooster(max_iterations=0).fit([0.0])
+
+    with pytest.raises(ValueError):
+        RalphBooster(learning_rate=0.0).fit([0.0])
+
+    with pytest.raises(ValueError):
+        RalphBooster(k_candidates=0).fit([0.0])
+
+    with pytest.raises(ValueError):
+        RalphBooster(min_residual_reduction=2.0).fit([0.0])
+
+    with pytest.raises(ValueError):
+        RalphBooster(min_improvement=-1.0).fit([0.0])

@@ -14,7 +14,14 @@ class RalphState:
     iteration: int = 0
     metrics: dict = field(default_factory=dict)
 
-    def update(self, new_fitted: Any, new_residual: Any, component: Any, metric_update: dict = None) -> 'RalphState':
+    def update(
+        self,
+        new_fitted: Any,
+        new_residual: Any,
+        component: Any,
+        metric_update: dict | None = None,
+        history_entry: dict | None = None,
+    ) -> "RalphState":
         """
         Return a new state with the component applied.
         """
@@ -22,12 +29,16 @@ class RalphState:
         new_metrics = self.metrics.copy()
         if metric_update:
             new_metrics.update(metric_update)
+
+        entry = {"iteration": self.iteration + 1, "metrics": new_metrics}
+        if history_entry:
+            entry.update(history_entry)
             
         return RalphState(
             residual=new_residual,
             fitted=new_fitted,
             components=new_components,
-            history=self.history + [{"iteration": self.iteration + 1, "metrics": new_metrics}],
+            history=self.history + [entry],
             iteration=self.iteration + 1,
             metrics=new_metrics
         )
