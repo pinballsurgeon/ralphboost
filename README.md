@@ -35,6 +35,26 @@ result = model.fit(signal)
 print(result.components)
 ```
 
+### Deterministic FFT Backend (fast)
+
+Install the fast extras for a deterministic FFT-based agent:
+```bash
+pip install ralphboost[fast]
+```
+
+```python
+from ralphboost import RalphBooster
+from ralphboost.domains.signal import SignalDomain
+
+model = RalphBooster(
+    domain=SignalDomain(sample_rate=100.0),
+    agent_backend="fft",
+    max_iterations=5
+)
+result = model.fit(signal)
+print(result.components)
+```
+
 ### Time Series Decomposition
 
 ```python

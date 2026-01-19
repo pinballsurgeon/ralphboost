@@ -62,6 +62,12 @@ class RalphBooster(BaseEstimator, RegressorMixin):
         if self.agent_backend == 'mock':
             from ..agents.mock import MockSignalAgent
             agent = MockSignalAgent()
+        elif self.agent_backend == 'fft':
+            from ..agents.fft_agent import FFTSignalAgent
+            sr = getattr(self.domain, "sample_rate", None)
+            if sr is None:
+                sr = sample_rate if sample_rate else 1.0
+            agent = FFTSignalAgent(sample_rate=sr)
         elif self.agent_backend == 'gemini':
             from ..agents.gemini import GeminiAgent
             # agent = GeminiAgent()
