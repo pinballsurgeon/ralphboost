@@ -160,11 +160,11 @@ def test_candidate_competition():
     refiner = OptimizationRefiner()
     
     # K=1
-    engine_k1 = RalphEngine(domain=domain, refiner=refiner, k_candidates=1)
+    engine_k1 = RalphEngine(domain=domain, refiner=refiner, k_candidates=1, learning_rate=1.0)
     res_k1 = engine_k1.fit(signal, max_iterations=3, min_residual_reduction=None)
     
     # K=5
-    engine_k5 = RalphEngine(domain=domain, refiner=refiner, k_candidates=5)
+    engine_k5 = RalphEngine(domain=domain, refiner=refiner, k_candidates=5, learning_rate=1.0)
     res_k5 = engine_k5.fit(signal, max_iterations=3, min_residual_reduction=None)
     
     # K1 should only have baseline

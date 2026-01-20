@@ -16,8 +16,13 @@ class TransitDomain(Domain):
     def get_context(self):
         return {
             "domain_name": "Kepler Transit Decomposition",
-            "schema": "JSON with types: baseline, periodic_train, local_dip",
-            "hint": "Looking for exoplanet transits (periodic dips) and trends."
+            "schema": """
+Candidates must use one of these families:
+1. "periodic_train": { "period": float, "phase": float, "width": float, "depth": float }
+2. "local_dip": { "center": float, "width": float, "depth": float }
+3. "baseline": { "intercept": float, "slope": float }
+""",
+            "hint": "Looking for exoplanet transits (periodic dips) and trends. Use 'periodic_train' for repeating dips."
         }
 
     def initialize_fitted(self, target):
@@ -199,7 +204,7 @@ class TransitDomain(Domain):
                 "depth": 0.0 # Refine will fix
             })
 
-        return candidates[:k+2] # Return a mix
+        return candidates[:k]  # Respect k_candidates contract
 
     def refine(self, candidate, state):
         residual = getattr(state, "residual", [])
