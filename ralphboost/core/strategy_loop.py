@@ -31,6 +31,14 @@ class StrategyLoop:
         self.min_improvement = min_improvement
         self.verbose = verbose
 
+    def run(self, curve, **kwargs):
+        """Compatibility alias for fit(target)"""
+        return self.fit(target=curve, **kwargs)
+
+    def run_curve(self, curve, **kwargs):
+        """Compatibility alias for fit(target)"""
+        return self.fit(target=curve, **kwargs)
+
     def fit(self, target, max_iterations: Optional[int] = None) -> RalphResult:
         if max_iterations is None:
             max_iterations = self.max_iterations

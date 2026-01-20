@@ -8,10 +8,11 @@ def _dot(v1, v2):
     return sum(x * y for x, y in zip(v1, v2))
 
 class TransitDomain(Domain):
-    def __init__(self, sample_rate=1.0, min_period=10.0, max_period=100.0):
+    def __init__(self, sample_rate=1.0, min_period=10.0, max_period=100.0, **kwargs):
         self.sample_rate = float(sample_rate)
         self.min_period = float(min_period)
         self.max_period = float(max_period)
+        # kwargs ignored for compatibility
 
     def get_context(self):
         return {
